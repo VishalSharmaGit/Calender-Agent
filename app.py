@@ -66,14 +66,15 @@ client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 # Setup tool definitions matching your AI Studio parameters
 tools = [list_events, add_to_calendar]
 
-# FIX: Wrap the configuration inside LiveConnectConfig
+# FIX: Pass the modality directly as a list containing the string "AUDIO"
 config = types.LiveConnectConfig(
-    response_modalities=[types.LiveModality.AUDIO],
+    response_modalities=["AUDIO"],
     generation_config=types.GenerateContentConfig(
         system_instruction=SYSTEM_INSTRUCTION,
         tools=tools
     )
 )
+
 
 
 # Streamlit Audio input connection block
