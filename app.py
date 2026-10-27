@@ -65,11 +65,16 @@ client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 # Setup tool definitions matching your AI Studio parameters
 tools = [list_events, add_to_calendar]
-config = types.GenerateContentConfig(
-    system_instruction=SYSTEM_INSTRUCTION,
-    tools=tools,
-    response_modalities=["AUDIO"] # Forces Gemini to talk back out loud
+
+# FIX: Wrap the configuration inside LiveConnectConfig
+config = types.LiveConnectConfig(
+    response_modalities=[types.LiveModality.AUDIO],
+    generation_config=types.GenerateContentConfig(
+        system_instruction=SYSTEM_INSTRUCTION,
+        tools=tools
+    )
 )
+
 
 # Streamlit Audio input connection block
 audio_value = st.audio_input("Record audio command")
