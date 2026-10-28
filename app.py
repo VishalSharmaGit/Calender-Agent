@@ -67,8 +67,9 @@ def add_to_calendar(title: str, date: str, time: str, duration_minutes: int = 60
             "start": {"dateTime": start.isoformat(), "timeZone": TZ_NAME},
             "end": {"dateTime": end.isoformat(), "timeZone": TZ_NAME},
         }
-        get_calendar_service().events().insert(calendarId=CALENDAR_ID, body=body).execute()
-        return f"Successfully added '{title}' on {date} at {time}."
+        created = get_calendar_service().events().insert(calendarId=CALENDAR_ID, body=body).execute()
+        return (f"Successfully added '{title}' on {date} at {time}. "
+                f"Event id: {created.get('id')} Link: {created.get('htmlLink')}")
     except Exception as e:
         return f"Failed to add event: {e}"
 
@@ -151,6 +152,7 @@ async def run_agent(pcm: bytes, rate: int):
     reply_pcm = bytearray()
     heard, said = [], []
     tool_called = False
+    log = []
     silence = b"\x00" * (rate * 2)  # 1 second of silence so the end of speech is detected
 
     async with client.aio.live.connect(model=LIVE_MODEL, config=build_config()) as session:
@@ -166,6 +168,7 @@ async def run_agent(pcm: bytes, rate: int):
                 for call in msg.tool_call.function_calls:
                     fn = FUNCS.get(call.name)
                     result = fn(**(call.args or {})) if fn else "Unknown tool"
+                    log.append(f"{call.name}({dict(call.args or {})}) -> {result}")
                     responses.append(
                         types.FunctionResponse(id=call.id, name=call.name, response={"result": result})
                     )
@@ -186,7 +189,9 @@ async def run_agent(pcm: bytes, rate: int):
                         continue  # model still has to answer after the tool result
                     break
 
-    return bytes(reply_pcm), "".join(heard).strip(), "".join(said).strip()
+    if not tool_called:
+        log.append("No calendar tool was called this turn.")
+    return bytes(reply_pcm), "".join(heard).strip(), "".join(said).strip(), log
 
 
 # ---------------------------------------------------------------- UI
@@ -194,6 +199,8 @@ if "history" not in st.session_state:
     st.session_state.history = []
     st.session_state.n = 0
     st.session_state.reply = None
+
+st.session_state.setdefault("tool_log", [])
 
 st.write("Record a message, then stop. The assistant replies out loud and may ask you questions.")
 
@@ -203,7 +210,8 @@ if audio is not None:
     with st.spinner("Agent is thinking..."):
         try:
             pcm, rate = wav_to_pcm(audio.read())
-            reply_pcm, heard, said = asyncio.run(asyncio.wait_for(run_agent(pcm, rate), timeout=60))
+            reply_pcm, heard, said, log = asyncio.run(asyncio.wait_for(run_agent(pcm, rate), timeout=60))
+            st.session_state.tool_log.extend(log)
             if heard:
                 st.session_state.history.append(f"Me: {heard}")
             if said:
@@ -224,6 +232,18 @@ if st.session_state.reply:
 
 for line in st.session_state.history:
     st.write(line)
+
+st.subheader("Calendar activity (real results)")
+if st.session_state.tool_log:
+    for item in st.session_state.tool_log[-10:]:
+        st.code(item, language=None)
+else:
+    st.caption("Nothing yet.")
+
+if st.button("Test calendar connection"):
+    today = datetime.now(TZ).strftime("%Y-%m-%d")
+    st.write(f"Calendar ID in use: {CALENDAR_ID}")
+    st.code(list_events(today), language=None)
 
 if st.button("New conversation"):
     st.session_state.history = []
