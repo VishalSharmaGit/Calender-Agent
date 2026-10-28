@@ -66,23 +66,18 @@ client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 # Setup tool definitions matching your AI Studio parameters
 tools = [list_events, add_to_calendar]
 
-# FIX: Pass the modality directly as a list containing the string "AUDIO"
+# FIX 1: Pass tools and system_instruction completely flat inside LiveConnectConfig
 config = types.LiveConnectConfig(
     response_modalities=["AUDIO"],
-    generation_config=types.GenerateContentConfig(
-        system_instruction=SYSTEM_INSTRUCTION,
-        tools=tools
-    )
+    tools=tools,
+    system_instruction=SYSTEM_INSTRUCTION
 )
 
 
 
-# Streamlit Audio input connection block
-audio_value = st.audio_input("Record audio command")
-
 async def run_live_voice_agent(audio_bytes):
-    # Initializes a real-time live bi-directional audio stream session
-    async with client.aio.live.connect(model="gemini-2.0-flash-exp", config=config) as session:
+    # FIX 2: Change model string identifier to production standard
+    async with client.aio.live.connect(model="gemini-2.0-flash", config=config) as session:
         # Send user phone audio stream block
         await session.send(input=audio_bytes, end_of_turn=True)
         
