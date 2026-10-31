@@ -1,0 +1,278 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: transparent;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 380px;
+            height: 210px
+        }
+
+        .bars {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1
+        }
+
+        .bars.l {
+            justify-content: flex-end
+        }
+
+        .bars.r {
+            justify-content: flex-start
+        }
+
+        .bar {
+            width: 4px;
+            height: 6px;
+            border-radius: 2px;
+            background: linear-gradient(#8fd0ff, #2f6bff);
+            transition: height .09s linear
+        }
+
+        body.listening .bar {
+            background: linear-gradient(#7ff5e4, #8b3dff)
+        }
+
+        .wrap {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            flex: none
+        }
+
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(120, 175, 255, .4)
+        }
+
+        .r1 {
+            inset: 0
+        }
+
+        .r2 {
+            inset: 24px;
+            border-color: rgba(120, 175, 255, .55)
+        }
+
+        #orb {
+            position: absolute;
+            inset: 50px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, .35);
+            cursor: pointer;
+            padding: 0;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 35% 30%, #7cc4ff, #1f5cf0 60%, #1236b8);
+            box-shadow: 0 0 50px rgba(60, 130, 255, .75), inset 0 2px 6px rgba(255, 255, 255, .45);
+            transition: transform .15s, box-shadow .3s
+        }
+
+        #orb:active {
+            transform: scale(.94)
+        }
+
+        #orb:focus-visible {
+            outline: 3px solid #5eead4;
+            outline-offset: 4px
+        }
+
+        .ico {
+            display: none
+        }
+
+        body.idle .mic,
+        body.speaking .mic {
+            display: block
+        }
+
+        body.listening .stop {
+            display: block
+        }
+
+        body.thinking .spin {
+            display: block;
+            animation: rot 1s linear infinite
+        }
+
+        body.listening #orb {
+            background: radial-gradient(circle at 35% 30%, #7ff5e4, #19b8c5 55%, #6a2cf0);
+            box-shadow: 0 0 60px rgba(25, 211, 197, .7), 0 0 90px rgba(139, 61, 255, .5), inset 0 2px 6px rgba(255, 255, 255, .45)
+        }
+
+        body.listening .ring,
+        body.speaking .ring {
+            animation: pulse 1.6s ease-out infinite
+        }
+
+        body.listening .r2,
+        body.speaking .r2 {
+            animation-delay: .5s
+        }
+
+        body.listening .ring {
+            border-color: rgba(94, 234, 212, .6)
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(.85);
+                opacity: .9
+            }
+
+            100% {
+                transform: scale(1.15);
+                opacity: 0
+            }
+        }
+
+        @keyframes rot {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        #label {
+            font-size: 26px;
+            font-weight: 700;
+            margin-top: 6px;
+            text-align: center
+        }
+
+        #sub {
+            font-size: 14px;
+            color: rgba(255, 255, 255, .75);
+            margin-top: 4px;
+            text-align: center;
+            padding: 0 16px
+        }
+    </style>
+</head>
+
+<body class="idle">
+    <div class="row">
+        <div class="bars l" id="bl"></div>
+        <div class="wrap">
+            <div class="ring r1"></div>
+            <div class="ring r2"></div>
+            <button id="orb" aria-label="Tap to start or stop recording">
+                <svg class="ico mic" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="3" width="6" height="12" rx="3" />
+                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                </svg>
+                <svg class="ico stop" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="14" rx="3" fill="#fff" />
+                </svg>
+                <svg class="ico spin" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff"
+                    stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-6.2-8.55" />
+                </svg>
+            </button>
+        </div>
+        <div class="bars r" id="br"></div>
+    </div>
+    <div id="label">Tap to speak</div>
+    <div id="sub">Tap the orb, talk, tap again to stop</div>
+    <script>
+        const TXT = { idle: ["Tap to speak", "Tap the orb, talk, tap again to stop"], listening: ["Listening…", "Tap the orb again to stop"], thinking: ["Thinking…", "Checking your calendar"], speaking: ["Speaking…", "Tap to interrupt"] };
+        const W = [.25, .4, .55, .75, .95, 1, .7];
+        const bl = document.getElementById("bl"), br = document.getElementById("br"), bars = [];
+        W.forEach((w, i) => { const a = document.createElement("div"); a.className = "bar"; bl.appendChild(a); bars.push({ el: a, w: w, i: i }); });
+        W.slice().reverse().forEach((w, i) => { const a = document.createElement("div"); a.className = "bar"; br.appendChild(a); bars.push({ el: a, w: w, i: i + 3 }); });
+        let state = "idle", ctx, stream, src, proc, analyser, chunks = [], rate = 44100, audio = null, lastToken = null, stopTimer = null;
+        function post(type, data) { window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, data), "*"); }
+        function set(s, msg) { state = s; document.body.className = s; const t = TXT[s]; document.getElementById("label").textContent = (msg && msg[0]) || t[0]; document.getElementById("sub").textContent = (msg && msg[1]) || t[1]; }
+        async function start() {
+            try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+            catch (e) { set("idle", ["Microphone blocked", "Allow mic access, or use the basic recorder under Details"]); return; }
+            ctx = new (window.AudioContext || window.webkitAudioContext)(); await ctx.resume();
+            rate = ctx.sampleRate; chunks = []; src = ctx.createMediaStreamSource(stream);
+            analyser = ctx.createAnalyser(); analyser.fftSize = 512;
+            proc = ctx.createScriptProcessor(4096, 1, 1);
+            proc.onaudioprocess = function (e) { chunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+            src.connect(analyser); src.connect(proc); proc.connect(ctx.destination);
+            set("listening"); stopTimer = setTimeout(stop, 55000);
+        }
+        function downsample(buf, from, to) {
+            const r = from / to, len = Math.floor(buf.length / r), out = new Int16Array(len);
+            for (let i = 0; i < len; i++) {
+                const s = Math.floor(i * r), e = Math.min(Math.floor((i + 1) * r), buf.length); let sum = 0; for (let j = s; j < e; j++)sum += buf[j];
+                const v = Math.max(-1, Math.min(1, sum / Math.max(1, e - s))); out[i] = v < 0 ? v * 32768 : v * 32767;
+            } return out;
+        }
+        function b64(int16) { const b = new Uint8Array(int16.buffer); let s = ""; for (let i = 0; i < b.length; i += 8192)s += String.fromCharCode.apply(null, b.subarray(i, i + 8192)); return btoa(s); }
+        function stop() {
+            clearTimeout(stopTimer);
+            try { proc.disconnect(); src.disconnect(); } catch (e) { }
+            stream.getTracks().forEach(function (t) { t.stop(); }); ctx.close();
+            const n = chunks.reduce(function (a, c) { return a + c.length; }, 0);
+            if (n < rate * 0.4) { set("idle", ["Too short", "Tap and speak a little longer"]); return; }
+            const all = new Float32Array(n); let o = 0; chunks.forEach(function (c) { all.set(c, o); o += c.length; });
+            set("thinking");
+            post("streamlit:setComponentValue", { value: { id: Date.now(), rate: 16000, pcm_b64: b64(downsample(all, rate, 16000)) }, dataType: "json" });
+        }
+        function play(b) {
+            audio = new Audio("data:audio/wav;base64," + b);
+            audio.onended = function () { set("idle"); }; audio.onerror = function () { set("idle"); };
+            audio.play().then(function () { set("speaking"); }).catch(function () { set("idle"); });
+        }
+        document.getElementById("orb").addEventListener("click", function () {
+            if (state === "idle") start(); else if (state === "listening") stop();
+            else if (state === "speaking") { if (audio) audio.pause(); set("idle"); }
+        });
+        window.addEventListener("message", function (ev) {
+            if (!ev.data || ev.data.type !== "streamlit:render") return;
+            const a = ev.data.args || {};
+            if (a.token !== lastToken) { lastToken = a.token; if (state === "thinking") set("idle"); }
+            if (a.reply_id) {
+                let seen = null; try { seen = sessionStorage.getItem("lastReply"); } catch (e) { }
+                if (a.reply_id !== seen) {
+                    try { sessionStorage.setItem("lastReply", a.reply_id); } catch (e) { }
+                    if (a.reply_b64) play(a.reply_b64);
+                }
+            }
+        });
+        function frame(t) {
+            let level = 0; t = t / 1000;
+            if (state === "listening" && analyser) { const d = new Uint8Array(analyser.fftSize); analyser.getByteTimeDomainData(d); let s = 0; for (let i = 0; i < d.length; i++) { const v = (d[i] - 128) / 128; s += v * v; } level = Math.min(1, Math.sqrt(s / d.length) * 6); }
+            else if (state === "speaking") level = .5 + .3 * Math.sin(t * 5);
+            else if (state === "thinking") level = .12;
+            bars.forEach(function (b) { const wob = Math.abs(Math.sin(t * 9 + b.i * 1.7)); b.el.style.height = (6 + level * b.w * (14 + 46 * wob)) + "px"; });
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+        post("streamlit:componentReady", { apiVersion: 1 });
+        post("streamlit:setFrameHeight", { height: 330 });
+    </script>
+</body>
+
+</html>
